@@ -1,8 +1,8 @@
--- [[ BINHDEPTRAI.HUB - AIR FREEZE MODE ]]
+-- [[ BINHDEPTRAI.HUB - FIX BLACK SCREEN & AUTO RECOVERY ]]
 local Config = { 
     BossMode = false, 
     Dist = 6, 
-    Height = 7, -- Độ cao an toàn
+    Height = 7,
 }
 
 local Player = game.Players.LocalPlayer
@@ -32,7 +32,7 @@ local function ExecuteSupremeCombo()
     for i = 1, 3 do VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1); VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1) end
 end
 
--- [[ 3. LOGIC DI CHUYỂN & AIR FREEZE ]]
+-- [[ 3. LOGIC DI CHUYỂN & FREEZE ]]
 RS.Stepped:Connect(function()
     if Config.BossMode then
         local boss = GetCurrentBoss()
@@ -41,7 +41,6 @@ RS.Stepped:Connect(function()
         if not root then return end
 
         if boss and boss:FindFirstChild("HumanoidRootPart") then
-            -- KHI CÓ BOSS: MỞ KHÓA VÀ FARM
             root.Anchored = false 
             local target = boss.HumanoidRootPart
             pcall(function()
@@ -54,21 +53,20 @@ RS.Stepped:Connect(function()
             root.Velocity = Vector3.zero
             root.CFrame = CFrame.lookAt(target.Position + Vector3.new(0, Config.Height, Config.Dist), target.Position)
         else
-            -- KHI IDLE: ĐÓNG BĂNG TRÊN KHÔNG
             root.Velocity = Vector3.zero
-            root.Anchored = true -- Khóa chặt vị trí, không sợ rơi
+            root.Anchored = true 
         end
     else
         if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-            Player.Character.HumanoidRootPart.Anchored = false -- Mở khóa khi tắt BossMode
+            Player.Character.HumanoidRootPart.Anchored = false
         end
     end
 end)
 
--- [[ 4. GIAO DIỆN (ĐÃ XÓA VERSION) ]]
+-- [[ 4. GIAO DIỆN CHÍNH ]]
 local function CreateUI()
-    if Player.PlayerGui:FindFirstChild("BinhHub_Final") then Player.PlayerGui.BinhHub_Final:Destroy() end
-    local sg = Instance.new("ScreenGui", Player.PlayerGui); sg.Name = "BinhHub_Final"; sg.ResetOnSpawn = false
+    if Player.PlayerGui:FindFirstChild("BinhHub_Main") then Player.PlayerGui.BinhHub_Main:Destroy() end
+    local sg = Instance.new("ScreenGui", Player.PlayerGui); sg.Name = "BinhHub_Main"; sg.ResetOnSpawn = false
     local main = Instance.new("Frame", sg); main.Size = UDim2.new(0, 240, 0, 360); main.Position = UDim2.new(0.05, 0, 0.3, 0)
     main.BackgroundColor3 = Color3.fromRGB(10, 10, 10); main.Active = true; main.Draggable = true 
     Instance.new("UICorner", main); Instance.new("UIStroke", main).Color = Color3.new(1, 0, 0)
@@ -79,8 +77,7 @@ local function CreateUI()
     task.spawn(function()
         while task.wait(0.5) do
             local b = GetCurrentBoss()
-            local status = (b ~= nil) and "FARMING BOSS 🔥" or "AIR FREEZE (IDLE) ❄️"
-            stext.Text = "STATUS: "..status.."\nTARGET: "..(b and b.Name or "Waiting...")
+            stext.Text = "STATUS: "..((b ~= nil and Config.BossMode) and "FARMING 🔥" or "IDLE/FREEZE ❄️").."\nTARGET: "..(b and b.Name or "None")
         end
     end)
 
@@ -106,21 +103,37 @@ local function CreateUI()
         for _, v in pairs(workspace:GetDescendants()) do pcall(function() if v:IsA("BasePart") then v.Material = "SmoothPlastic"; v.Color = Color3.new(0.4, 0.4, 0.4) end end) end
     end)
 
+    -- FIX BLACK SCREEN VĨNH VIỄN TẠI ĐÂY
     AddBtn("BLACK SCREEN (AFK - J)", 270, function()
         if not Player.PlayerGui:FindFirstChild("AFK_Overlay") then
-            local ov = Instance.new("ScreenGui", Player.PlayerGui); ov.Name = "AFK_Overlay"
-            local f = Instance.new("Frame", ov); f.Size = UDim2.new(1,0,1,0); f.BackgroundColor3 = Color3.new(0,0,0); f.ZIndex = 999
+            local ov = Instance.new("ScreenGui", Player.PlayerGui)
+            ov.Name = "AFK_Overlay"
+            ov.ResetOnSpawn = false -- QUAN TRỌNG: Không bị xóa khi chết
+            ov.IgnoreGuiInset = true
+            local f = Instance.new("Frame", ov); f.Size = UDim2.new(1,0,1,0); f.BackgroundColor3 = Color3.new(0,0,0); f.ZIndex = 9999
+            local t = Instance.new("TextLabel", f); t.Size = UDim2.new(1,0,1,0); t.Text = "AFK ACTIVE\nPRESS J TO EXIT"; t.TextColor3 = Color3.new(1,0,0); t.TextSize = 25; t.BackgroundTransparency = 1; t.Font = "GothamBold"
             RS:Set3dRenderingEnabled(false)
-        else Player.PlayerGui.AFK_Overlay:Destroy(); RS:Set3dRenderingEnabled(true) end
+        else 
+            Player.PlayerGui.AFK_Overlay:Destroy()
+            RS:Set3dRenderingEnabled(true) 
+        end
     end)
 
     UIS.InputBegan:Connect(function(i, p) 
         if not p and i.KeyCode == Enum.KeyCode.K then main.Visible = not main.Visible end
         if i.KeyCode == Enum.KeyCode.J and Player.PlayerGui:FindFirstChild("AFK_Overlay") then 
-            Player.PlayerGui.AFK_Overlay:Destroy(); RS:Set3dRenderingEnabled(true)
+            Player.PlayerGui.AFK_Overlay:Destroy()
+            RS:Set3dRenderingEnabled(true)
         end
     end)
 end
+
+-- Tự động gỡ Freeze khi nhân vật hồi sinh (đề phòng lỗi)
+Player.CharacterAdded:Connect(function(char)
+    task.wait(1)
+    local root = char:WaitForChild("HumanoidRootPart")
+    root.Anchored = false
+end)
 
 task.spawn(function()
     while task.wait(0.2) do
