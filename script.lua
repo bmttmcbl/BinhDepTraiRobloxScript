@@ -1,9 +1,8 @@
--- [[ BINHDEPTRAI.HUB - v155 - BACK TO TP BOSS & PLAYER ]]
+-- [[ BINHDEPTRAI.HUB - AIR FREEZE MODE ]]
 local Config = { 
     BossMode = false, 
-    Dist = 7, 
-    Height = 6, -- Đứng cao hơn một chút để né đòn
-    RangeSize = Vector3.new(70, 70, 70),
+    Dist = 6, 
+    Height = 7, -- Độ cao an toàn
 }
 
 local Player = game.Players.LocalPlayer
@@ -21,85 +20,93 @@ local function GetCurrentBoss()
     return nil
 end
 
--- [[ 2. GOD COMBO V118 ]]
-local function ExecuteGodCombo()
+-- [[ 2. SUPREME COMBO ]]
+local function ExecuteSupremeCombo()
     local char = Player.Character
     if not char then return end
     local bp = Player.Backpack
-    -- Fruit Skill
     for _, tool in pairs(char:GetChildren()) do if tool:IsA("Tool") then tool.Parent = bp end end
-    for _, key in ipairs({"E", "R", "T", "F"}) do VIM:SendKeyEvent(true, key, false, game); task.wait(0.01); VIM:SendKeyEvent(false, key, false, game) end
-    -- Sword Skill
+    for _, key in ipairs({"E", "R", "T", "F"}) do VIM:SendKeyEvent(true, key, false, game); task.wait(); VIM:SendKeyEvent(false, key, false, game) end
     for _, tool in pairs(bp:GetChildren()) do if tool:IsA("Tool") then tool.Parent = char end end
-    for _, key in ipairs({"E", "R", "T", "F"}) do VIM:SendKeyEvent(true, key, false, game); task.wait(0.01); VIM:SendKeyEvent(false, key, false, game) end
-    VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1); VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+    for _, key in ipairs({"E", "R", "T", "F"}) do VIM:SendKeyEvent(true, key, false, game); task.wait(); VIM:SendKeyEvent(false, key, false, game) end
+    for i = 1, 3 do VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1); VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1) end
 end
 
--- [[ 3. LOGIC TP BOSS (ỔN ĐỊNH NHẤT) ]]
+-- [[ 3. LOGIC DI CHUYỂN & AIR FREEZE ]]
 RS.Stepped:Connect(function()
     if Config.BossMode then
         local boss = GetCurrentBoss()
-        if boss and boss:FindFirstChild("HumanoidRootPart") and Player.Character then
+        local char = Player.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+
+        if boss and boss:FindFirstChild("HumanoidRootPart") then
+            -- KHI CÓ BOSS: MỞ KHÓA VÀ FARM
+            root.Anchored = false 
             local target = boss.HumanoidRootPart
-            local root = Player.Character.HumanoidRootPart
-            
             pcall(function()
-                target.Size = Config.RangeSize -- Phóng to để chém cho dễ
+                target.Size = Vector3.new(70,70,70)
                 target.CanCollide = false
-                target.Velocity = Vector3.zero -- Khóa Boss đứng im tại chỗ
-                
-                -- Noclip nhân vật
-                for _, v in pairs(Player.Character:GetDescendants()) do 
+                for _, v in pairs(char:GetDescendants()) do 
                     if v:IsA("BasePart") then v.CanCollide = false; v.CanTouch = false end 
                 end
             end)
-            
-            -- TP mình đến phía trên Boss một chút để chém xuống
             root.Velocity = Vector3.zero
             root.CFrame = CFrame.lookAt(target.Position + Vector3.new(0, Config.Height, Config.Dist), target.Position)
+        else
+            -- KHI IDLE: ĐÓNG BĂNG TRÊN KHÔNG
+            root.Velocity = Vector3.zero
+            root.Anchored = true -- Khóa chặt vị trí, không sợ rơi
+        end
+    else
+        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            Player.Character.HumanoidRootPart.Anchored = false -- Mở khóa khi tắt BossMode
         end
     end
 end)
 
--- [[ 4. GIAO DIỆN V155 ]]
+-- [[ 4. GIAO DIỆN (ĐÃ XÓA VERSION) ]]
 local function CreateUI()
-    if Player.PlayerGui:FindFirstChild("BinhHub_v155") then Player.PlayerGui.BinhHub_v155:Destroy() end
-    local sg = Instance.new("ScreenGui", Player.PlayerGui); sg.Name = "BinhHub_v155"; sg.ResetOnSpawn = false
-    local main = Instance.new("Frame", sg); main.Size = UDim2.new(0, 240, 0, 380); main.Position = UDim2.new(0.05, 0, 0.3, 0)
-    main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); main.Active = true; main.Draggable = true 
+    if Player.PlayerGui:FindFirstChild("BinhHub_Final") then Player.PlayerGui.BinhHub_Final:Destroy() end
+    local sg = Instance.new("ScreenGui", Player.PlayerGui); sg.Name = "BinhHub_Final"; sg.ResetOnSpawn = false
+    local main = Instance.new("Frame", sg); main.Size = UDim2.new(0, 240, 0, 360); main.Position = UDim2.new(0.05, 0, 0.3, 0)
+    main.BackgroundColor3 = Color3.fromRGB(10, 10, 10); main.Active = true; main.Draggable = true 
     Instance.new("UICorner", main); Instance.new("UIStroke", main).Color = Color3.new(1, 0, 0)
 
-    local stext = Instance.new("TextLabel", main); stext.Size = UDim2.new(0.9, 0, 0, 60); stext.Position = UDim2.new(0.05, 0, 0, 10)
-    stext.BackgroundColor3 = Color3.fromRGB(25, 25, 25); stext.TextColor3 = Color3.new(1,1,1); stext.Font = "GothamBold"; stext.TextSize = 10; Instance.new("UICorner", stext)
+    local stext = Instance.new("TextLabel", main); stext.Size = UDim2.new(0.9, 0, 0, 60); stext.Position = UDim2.new(0.05, 0, 0, 15)
+    stext.BackgroundColor3 = Color3.fromRGB(20, 20, 20); stext.TextColor3 = Color3.new(1,1,1); stext.Font = "GothamBold"; stext.TextSize = 10; Instance.new("UICorner", stext)
     
     task.spawn(function()
-        while task.wait(0.8) do
+        while task.wait(0.5) do
             local b = GetCurrentBoss()
-            stext.Text = "STATIONARY FARM 🔱\nBOSS: "..(b and b.Name or "None").."\nSTATUS: "..(Config.BossMode and "ON" or "OFF")
+            local status = (b ~= nil) and "FARMING BOSS 🔥" or "AIR FREEZE (IDLE) ❄️"
+            stext.Text = "STATUS: "..status.."\nTARGET: "..(b and b.Name or "Waiting...")
         end
     end)
 
     local function AddBtn(text, pos, callback)
-        local b = Instance.new("TextButton", main); b.Size = UDim2.new(0.9, 0, 0, 40); b.Position = UDim2.new(0.05, 0, 0, pos)
+        local b = Instance.new("TextButton", main); b.Size = UDim2.new(0.9, 0, 0, 45); b.Position = UDim2.new(0.05, 0, 0, pos)
         b.Text = text; b.BackgroundColor3 = Color3.fromRGB(40, 40, 40); b.TextColor3 = Color3.new(1,1,1); b.Font = "GothamBold"; b.TextSize = 11; Instance.new("UICorner", b)
         b.MouseButton1Click:Connect(function() callback(b) end)
         return b
     end
 
-    local fBtn = AddBtn("START FARM", 80, function() Config.BossMode = not Config.BossMode end)
+    local fBtn = AddBtn("START AUTO FARM", 90, function() Config.BossMode = not Config.BossMode end)
     RS.RenderStepped:Connect(function() fBtn.BackgroundColor3 = Config.BossMode and Color3.new(0, 0.6, 0) or Color3.fromRGB(40, 40, 40) end)
     
-    -- TRẢ LẠI TP PLAYER ĐÂY ÔNG ƠI
-    AddBtn("TP RANDOM PLAYER", 130, function()
+    AddBtn("TP RANDOM PLAYER", 150, function()
         local plrs = {}; for _, p in pairs(game.Players:GetPlayers()) do if p ~= Player and p.Character then table.insert(plrs, p) end end
-        if #plrs > 0 then Player.Character:PivotTo(plrs[math.random(1, #plrs)].Character:GetPivot()) end
+        if #plrs > 0 then 
+            if Player.Character:FindFirstChild("HumanoidRootPart") then Player.Character.HumanoidRootPart.Anchored = false end
+            Player.Character:PivotTo(plrs[math.random(1, #plrs)].Character:GetPivot()) 
+        end
     end)
 
-    AddBtn("FPS BOOST (GREY)", 180, function()
+    AddBtn("ULTRA FPS BOOST", 210, function()
         for _, v in pairs(workspace:GetDescendants()) do pcall(function() if v:IsA("BasePart") then v.Material = "SmoothPlastic"; v.Color = Color3.new(0.4, 0.4, 0.4) end end) end
     end)
 
-    AddBtn("BLACK SCREEN (AFK - J)", 230, function()
+    AddBtn("BLACK SCREEN (AFK - J)", 270, function()
         if not Player.PlayerGui:FindFirstChild("AFK_Overlay") then
             local ov = Instance.new("ScreenGui", Player.PlayerGui); ov.Name = "AFK_Overlay"
             local f = Instance.new("Frame", ov); f.Size = UDim2.new(1,0,1,0); f.BackgroundColor3 = Color3.new(0,0,0); f.ZIndex = 999
@@ -107,8 +114,6 @@ local function CreateUI()
         else Player.PlayerGui.AFK_Overlay:Destroy(); RS:Set3dRenderingEnabled(true) end
     end)
 
-    AddBtn("HIDE MENU (K)", 280, function() main.Visible = false end)
-    
     UIS.InputBegan:Connect(function(i, p) 
         if not p and i.KeyCode == Enum.KeyCode.K then main.Visible = not main.Visible end
         if i.KeyCode == Enum.KeyCode.J and Player.PlayerGui:FindFirstChild("AFK_Overlay") then 
@@ -117,10 +122,9 @@ local function CreateUI()
     end)
 end
 
--- [[ 5. COMBO LOOP ]]
 task.spawn(function()
-    while task.wait(0.3) do
-        if Config.BossMode and GetCurrentBoss() then ExecuteGodCombo() end 
+    while task.wait(0.2) do
+        if Config.BossMode and GetCurrentBoss() then ExecuteSupremeCombo() end 
     end
 end)
 
