@@ -1,223 +1,202 @@
--- [[ CONFIGURATION ]]
+-- [[ BINHDEPTRAI.HUB - v21 FINAL INTEGRATED ]]
+-- Hướng dẫn: Nhấn [ K ] để ẩn/hiện Menu
+-- Tính năng: Auto Farm, Aimbot Head, Tilt (Chuối xuống), Smart Combo
+
 local Config = {
-    Active = false,
-    Dist = 7,         
-    Height = 4,       
-    AttackSpeed = 0.3, 
+    Active = false, 
+    BossMode = false, 
+    Dist = 8, -- Tăng nhẹ khoảng cách để góc chuối xuống đẹp hơn
+    Height = 5, 
     TargetName = "" 
 }
 
 local Player = game.Players.LocalPlayer
 local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
-local VU = game:GetService("VirtualUser")
 local UIS = game:GetService("UserInputService")
+local TS = game:GetService("TweenService")
 local Players = game:GetService("Players")
 
-local Remote = game:GetService("ReplicatedStorage"):FindFirstChild("Weapon_Event", true) 
-              or game:GetService("ReplicatedStorage"):FindFirstChild("Events", true)
-
-local LastAtk = 0
-local CurrentTarget = nil
-local MySpawnSpot = nil
-local SkillIndex = 1
 local Keys = {"E", "R", "T", "F"}
+local BossList = {"Kyo", "Shinoa", "Duck Boss", "Chara", "Cutie Boss", "Sword Master", "Sans", "King Noob"}
+local ValidIslands = {"Cutie Noob Island", "Duck Island", "Judgement Island", "Kyo Island", "Safe Zone Island", "Sand Island", "Sans Island", "Sky Island", "Sword Master Island", "Tiny Statue Island"}
+local CurrentTarget = nil
 
--- [[ 1. SMOOTH DRAG ]]
-local function MakeDraggable(frame, handle)
-    local dragging, dragInput, dragStart, startPos
-    handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true; dragStart = input.Position; startPos = frame.Position
-        end
-    end)
-    UIS.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-    UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-    end)
-end
-
--- [[ 2. UI CONSTRUCTION ]]
+-- [[ 1. UI ENGINE & DRAGGABLE ]]
 local ScreenGui = Instance.new("ScreenGui", Player:WaitForChild("PlayerGui"))
-ScreenGui.Name = "binhdeptrai_v31"
-ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "BinhDepTrai_V21"; ScreenGui.ResetOnSpawn = false
 
-local OpenBtn = Instance.new("TextButton", ScreenGui)
-OpenBtn.Size = UDim2.new(0, 90, 0, 90); OpenBtn.Position = UDim2.new(0, 25, 0.5, -45)
-OpenBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 45); OpenBtn.Text = "OPEN"; OpenBtn.TextColor3 = Color3.fromRGB(180, 150, 255)
-OpenBtn.Font = Enum.Font.GothamBold; OpenBtn.TextSize = 20; OpenBtn.Visible = false
-Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 25); Instance.new("UIStroke", OpenBtn).Thickness = 4
-
-local MainFrame = Instance.new("Frame", ScreenGui)
+local MainFrame = Instance.new("CanvasGroup", ScreenGui)
 MainFrame.Size = UDim2.new(0, 700, 0, 520); MainFrame.Position = UDim2.new(0.5, -350, 0.5, -260)
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 17); Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 20)
-MakeDraggable(MainFrame, MainFrame)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12); MainFrame.BorderSizePixel = 0
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 15)
+local RGBStroke = Instance.new("UIStroke", MainFrame); RGBStroke.Thickness = 3; RGBStroke.ApplyStrokeMode = "Border"
 
+-- Kéo thả Menu
+local dragging, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true; dragStart = input.Position; startPos = MainFrame.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+    end
+end)
+UIS.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Header
 local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 65); Header.BackgroundColor3 = Color3.fromRGB(20, 20, 30); Instance.new("UICorner", Header)
-
+Header.Size = UDim2.new(1, 0, 0, 70); Header.BackgroundTransparency = 1
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(0, 400, 1, 0); Title.Position = UDim2.new(0, 25, 0, 0)
-Title.Text = "BINHDEPTRAI.HUB"; Title.TextSize = 28; Title.TextColor3 = Color3.new(1,1,1) -- Removed version here
-Title.Font = Enum.Font.GothamBold; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Size = UDim2.new(0, 300, 1, 0); Title.Position = UDim2.new(0, 30, 0, 0)
+Title.Text = "BinhDepTrai.Hub"; Title.TextColor3 = Color3.new(1,1,1); Title.TextSize = 26; Title.Font = "GothamBold"; Title.BackgroundTransparency = 1; Title.TextXAlignment = "Left"
 
-local HideBtn = Instance.new("TextButton", Header)
-HideBtn.Size = UDim2.new(0, 150, 0, 45); HideBtn.Position = UDim2.new(1, -165, 0, 10)
-HideBtn.Text = "[ MINIMIZE ]"; HideBtn.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
-HideBtn.TextColor3 = Color3.new(1,1,1); HideBtn.Font = Enum.Font.GothamBold; HideBtn.TextSize = 18; Instance.new("UICorner", HideBtn)
+local MiniBtn = Instance.new("TextButton", Header)
+MiniBtn.Size = UDim2.new(0, 40, 0, 40); MiniBtn.Position = UDim2.new(1, -55, 0, 15)
+MiniBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50); MiniBtn.Text = "—"; MiniBtn.TextColor3 = Color3.new(1,1,1); MiniBtn.Font = "GothamBold"; MiniBtn.TextSize = 20; Instance.new("UICorner", MiniBtn)
 
-HideBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; OpenBtn.Visible = true end)
-OpenBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; OpenBtn.Visible = false end)
+-- Sidebar & Content
+local SideBar = Instance.new("Frame", MainFrame)
+SideBar.Size = UDim2.new(0, 180, 1, -90); SideBar.Position = UDim2.new(0, 20, 0, 80)
+SideBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22); Instance.new("UICorner", SideBar)
+Instance.new("UIListLayout", SideBar).Padding = UDim.new(0, 10); Instance.new("UIPadding", SideBar).PaddingTop = UDim.new(0, 10)
 
-local Nav = Instance.new("Frame", MainFrame)
-Nav.Size = UDim2.new(0, 180, 1, -85); Nav.Position = UDim2.new(0, 15, 0, 75); Nav.BackgroundTransparency = 1
-
-local Content = Instance.new("Frame", MainFrame)
-Content.Position = UDim2.new(0, 210, 0, 75); Content.Size = UDim2.new(1, -225, 1, -100); Content.BackgroundTransparency = 1
+local ContentHolder = Instance.new("Frame", MainFrame)
+ContentHolder.Position = UDim2.new(0, 215, 0, 80); ContentHolder.Size = UDim2.new(1, -235, 1, -90); ContentHolder.BackgroundTransparency = 1
 
 local function CreateTab()
-    local f = Instance.new("ScrollingFrame", Content)
-    f.Size = UDim2.new(1, 0, 1, 0); f.BackgroundTransparency = 1; f.Visible = false; f.ScrollBarThickness = 8
-    f.ScrollBarImageColor3 = Color3.fromRGB(120, 100, 255)
-    local layout = Instance.new("UIListLayout", f); layout.Padding = UDim.new(0, 12)
-    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        f.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 20)
-    end)
+    local f = Instance.new("CanvasGroup", ContentHolder)
+    f.Size = UDim2.new(1, 0, 1, 0); f.BackgroundTransparency = 1; f.Visible = false; f.GroupTransparency = 1
+    local scroll = Instance.new("ScrollingFrame", f)
+    scroll.Size = UDim2.new(1, 0, 1, 0); scroll.BackgroundTransparency = 1; scroll.ScrollBarThickness = 0
+    Instance.new("UIListLayout", scroll).Padding = UDim.new(0, 10)
     return f
 end
 
-local Tabs = { Home = CreateTab(), Map = CreateTab(), Players = CreateTab() }
-Tabs.Home.Visible = true
+local Tabs = { Farm = CreateTab(), Map = CreateTab(), Plyr = CreateTab() }
+local CurrentTab = Tabs.Farm; CurrentTab.Visible = true; CurrentTab.GroupTransparency = 0
+
+local function SwitchTab(newTab)
+    if newTab == CurrentTab then return end
+    TS:Create(CurrentTab, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0.8, 0, 0.8, 0), GroupTransparency = 1}):Play()
+    task.wait(0.2); CurrentTab.Visible = false
+    newTab.Visible = true; newTab.Size = UDim2.new(0.8, 0, 0.8, 0); newTab.GroupTransparency = 1
+    TS:Create(newTab, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0), GroupTransparency = 0}):Play()
+    CurrentTab = newTab
+end
 
 local function AddNav(name, tab)
-    local b = Instance.new("TextButton", Nav)
-    b.Size = UDim2.new(1, 0, 0, 60); b.Position = UDim2.new(0, 0, 0, (#Nav:GetChildren() - 1) * 75)
-    b.BackgroundColor3 = Color3.fromRGB(35, 35, 50); b.Text = name; b.TextColor3 = Color3.new(1,1,1)
-    b.Font = Enum.Font.GothamBold; b.TextSize = 22; Instance.new("UICorner", b)
-    b.MouseButton1Click:Connect(function() for _, t in pairs(Tabs) do t.Visible = false end; tab.Visible = true end)
+    local b = Instance.new("TextButton", SideBar)
+    b.Size = UDim2.new(0.9, 0, 0, 45); b.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+    b.Text = name; b.TextColor3 = Color3.new(0.8,0.8,0.8); b.Font = "GothamBold"; b.TextSize = 14; Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(function() SwitchTab(tab) end)
 end
+AddNav("FARMING", Tabs.Farm); AddNav("WORLD", Tabs.Map); AddNav("PLAYERS", Tabs.Plyr)
 
-local function AddBtn(text, parent, callback)
-    local b = Instance.new("TextButton", parent)
-    b.Size = UDim2.new(0.98, 0, 0, 65); b.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-    b.Text = text; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.GothamBold; b.TextSize = 22
-    Instance.new("UICorner", b); b.MouseButton1Click:Connect(callback); return b
-end
-
-AddNav("FARM", Tabs.Home); AddNav("ISLANDS", Tabs.Map); AddNav("PLAYERS", Tabs.Players)
-
--- [[ 3. AUTO FARM TOGGLE ]]
-local FarmToggle = AddBtn("AUTO FARM: OFF", Tabs.Home, function() 
-    Config.Active = not Config.Active 
-    if Config.Active then
-        local r = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-        if r then MySpawnSpot = r.Position end
-    else
-        MySpawnSpot = nil; CurrentTarget = nil
-    end
-end)
-
--- Text Update Loop
-task.spawn(function()
-    while task.wait(0.1) do
-        if Config.Active then
-            FarmToggle.Text = "AUTO FARM: ON"
-            FarmToggle.BackgroundColor3 = Color3.fromRGB(100, 80, 255)
-        else
-            FarmToggle.Text = "AUTO FARM: OFF"
-            FarmToggle.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-        end
-    end
-end)
-
-local TargetInput = Instance.new("TextBox", Tabs.Home)
-TargetInput.Size = UDim2.new(0.98, 0, 0, 60); TargetInput.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-TargetInput.PlaceholderText = "Type Exact Mob Name..."; TargetInput.TextColor3 = Color3.new(1,1,1)
-TargetInput.Font = Enum.Font.GothamBold; TargetInput.TextSize = 20; Instance.new("UICorner", TargetInput)
-TargetInput.FocusLost:Connect(function() Config.TargetName = TargetInput.Text end)
-
-AddBtn("EQUIP ALL TOOLS", Tabs.Home, function()
-    for _, t in pairs(Player.Backpack:GetChildren()) do if t:IsA("Tool") then t.Parent = Player.Character end end
-end)
-
--- [[ 4. ISLANDS & PLAYERS ]]
-local ValidIslands = {"Starter Island", "Second Island", "Third Island", "Fourth Island", "Fifth Island", "Six Island", "Seven Island", "Eight Island", "Nine Island", "Cutie Noob Island", "Duck Island", "Judgement Island", "Kyo Island", "Safe Zone Island", "Sand Island", "Sans Island", "Sky Island", "Sword Master Island", "Tiny Statue Island"}
-for _, name in pairs(ValidIslands) do
-    AddBtn(name, Tabs.Map, function()
-        local t = workspace:FindFirstChild(name, true)
-        if t then Player.Character:PivotTo(t:GetPivot() * CFrame.new(0, 50, 0)) end
+-- [[ 2. UI COMPONENTS ]]
+local function CreateToggleSwitch(parent, text, defaultValue, callback)
+    local container = Instance.new("Frame", parent); container.Size = UDim2.new(0.98, 0, 0, 60); container.BackgroundTransparency = 1
+    local label = Instance.new("TextLabel", container); label.Size = UDim2.new(0.6, 0, 1, 0); label.Position = UDim2.new(0, 10, 0, 0); label.Text = text; label.TextColor3 = Color3.new(1,1,1); label.Font = "GothamBold"; label.TextSize = 16; label.BackgroundTransparency = 1; label.TextXAlignment = "Left"
+    local switchBg = Instance.new("TextButton", container); switchBg.Size = UDim2.new(0, 60, 0, 30); switchBg.Position = UDim2.new(1, -70, 0.5, -15); switchBg.BackgroundColor3 = defaultValue and Color3.fromRGB(0, 255, 120) or Color3.fromRGB(50, 50, 60); switchBg.Text = ""; Instance.new("UICorner", switchBg).CornerRadius = UDim.new(1, 0)
+    local knob = Instance.new("Frame", switchBg); knob.Size = UDim2.new(0, 26, 0, 26); knob.Position = defaultValue and UDim2.new(1, -28, 0, 2) or UDim2.new(0, 2, 0, 2); knob.BackgroundColor3 = Color3.new(1,1,1); Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+    local isActive = defaultValue
+    switchBg.MouseButton1Click:Connect(function()
+        isActive = not isActive
+        TS:Create(switchBg, TweenInfo.new(0.2), {BackgroundColor3 = isActive and Color3.fromRGB(0, 255, 120) or Color3.fromRGB(50, 50, 60)}):Play()
+        TS:Create(knob, TweenInfo.new(0.2), {Position = isActive and UDim2.new(1, -28, 0, 2) or UDim2.new(0, 2, 0, 2)}):Play()
+        callback(isActive)
     end)
 end
 
+local function AddBtn(text, parentTab, callback)
+    local b = Instance.new("TextButton", parentTab:FindFirstChildOfClass("ScrollingFrame"))
+    b.Size = UDim2.new(0.98, 0, 0, 55); b.BackgroundColor3 = Color3.fromRGB(25, 25, 35); b.Text = text; b.TextColor3 = Color3.new(1,1,1); b.Font = "GothamBold"; b.TextSize = 15; Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(callback); return b
+end
+
+local farmScroll = Tabs.Farm:FindFirstChildOfClass("ScrollingFrame")
+CreateToggleSwitch(farmScroll, "Auto Farm Mob", Config.Active, function(v) Config.Active = v end)
+CreateToggleSwitch(farmScroll, "Auto Farm Boss", Config.BossMode, function(v) Config.BossMode = v end)
+
+for _, name in pairs(ValidIslands) do AddBtn(name, Tabs.Map, function() local t = workspace:FindFirstChild(name, true); if t then Player.Character:PivotTo(t:GetPivot() * CFrame.new(0, 55, 0)) end end) end
 local function RefreshPlayers()
-    for _, c in pairs(Tabs.Players:GetChildren()) do if c:IsA("TextButton") and c.Text ~= "REFRESH LIST" then c:Destroy() end end
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= Player then AddBtn(p.DisplayName, Tabs.Players, function() if p.Character then Player.Character:PivotTo(p.Character:GetPivot()) end end) end
-    end
+    local scroll = Tabs.Plyr:FindFirstChildOfClass("ScrollingFrame")
+    for _, child in pairs(scroll:GetChildren()) do if child:IsA("TextButton") and child.Text ~= "REFRESH LIST" then child:Destroy() end end
+    for _, p in pairs(Players:GetPlayers()) do if p ~= Player then AddBtn(p.DisplayName, Tabs.Plyr, function() if p.Character then Player.Character:PivotTo(p.Character:GetPivot()) end end) end end
 end
-AddBtn("REFRESH LIST", Tabs.Players, RefreshPlayers)
+AddBtn("REFRESH LIST", Tabs.Plyr, RefreshPlayers); RefreshPlayers()
 
--- [[ 5. ENGINE LOGIC ]]
-local function UseSkill(key)
-    if not CurrentTarget then return end
-    if Remote then
-        pcall(function()
-            Remote:FireServer("Skill " .. key .. " Release", CurrentTarget.Position)
-            Remote:FireServer(key, CurrentTarget.Position)
-        end)
+-- [[ 3. ENGINE LOGIC (COMBAT + AIM + TILT) ]]
+task.spawn(function()
+    while true do
+        if (Config.Active or Config.BossMode) and CurrentTarget then
+            -- GIAI ĐOẠN 1: FRUIT COMBO (TAY KHÔNG)
+            for _, t in pairs(Player.Character:GetChildren()) do if t:IsA("Tool") then t.Parent = Player.Backpack end end
+            task.wait(0.1)
+            for i=1,2 do 
+                for _, key in pairs(Keys) do 
+                    VIM:SendKeyEvent(true, key, false, game); task.wait(0.05); VIM:SendKeyEvent(false, key, false, game); task.wait(0.1) 
+                end 
+            end
+
+            -- GIAI ĐOẠN 2: SWORD COMBO (EQUIP ALL)
+            for _, t in pairs(Player.Backpack:GetChildren()) do if t:IsA("Tool") then t.Parent = Player.Character end end
+            task.wait(0.1)
+            for i=1,2 do 
+                for _, key in pairs(Keys) do 
+                    VIM:SendKeyEvent(true, key, false, game); task.wait(0.05); VIM:SendKeyEvent(false, key, false, game); task.wait(0.1) 
+                end 
+                VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1); task.wait(0.1); VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            end
+
+            -- GIAI ĐOẠN 3: UNEQUIP
+            for _, t in pairs(Player.Character:GetChildren()) do if t:IsA("Tool") then t.Parent = Player.Backpack end end
+            task.wait(0.3)
+        end
+        task.wait(0.1)
     end
-    VIM:SendKeyEvent(true, key, false, game)
-    task.wait(0.01); VIM:SendKeyEvent(false, key, false, game)
-end
+end)
 
+-- AIMBOT & TILT (CHUỐI ĐẦU XUỐNG QUÁI)
+RS.Heartbeat:Connect(function()
+    if (Config.Active or Config.BossMode) and CurrentTarget and Player.Character:FindFirstChild("HumanoidRootPart") then
+        local root = Player.Character.HumanoidRootPart
+        for _, p in pairs(Player.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
+        root.AssemblyLinearVelocity = Vector3.zero
+        
+        -- Vị trí sau lưng và trên cao
+        local behindPos = CurrentTarget.CFrame * CFrame.new(0, Config.Height, Config.Dist)
+        
+        -- AIMBOT HEAD: Lấy vị trí đầu của quái, nếu không có thì lấy vị trí gốc
+        local headPos = CurrentTarget.Parent:FindFirstChild("Head") and CurrentTarget.Parent.Head.Position or CurrentTarget.Position
+        
+        -- Ép nhân vật chuối đầu nhìn thẳng vào Head
+        root.CFrame = root.CFrame:Lerp(CFrame.lookAt(behindPos.Position, headPos), 0.25)
+    end
+end)
+
+-- Tìm mục tiêu
 task.spawn(function()
     while task.wait(0.5) do
-        if Config.Active then
-            local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-            if not root then continue end
-            local target, d = nil, 250
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v:IsA("Humanoid") and v.Health > 0 and v.Parent ~= Player.Character then
-                    if not Players:GetPlayerFromCharacter(v.Parent) then
-                        local hrp = v.Parent:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                            local mag = (Config.TargetName == "" and MySpawnSpot) and (MySpawnSpot - hrp.Position).Magnitude or (root.Position - hrp.Position).Magnitude
-                            if Config.TargetName ~= "" and v.Parent.Name == Config.TargetName then
-                                target = hrp; break
-                            elseif Config.TargetName == "" and mag < d then
-                                target = hrp; d = mag
-                            end
-                        end
-                    end
-                end
+        if Config.Active or Config.BossMode then
+            local target = nil
+            if Config.BossMode then
+                for _, b in pairs(BossList) do for _, v in pairs(workspace:GetDescendants()) do if v.Name == b and v:FindFirstChild("Humanoid") and v.Health > 0 then target = v:FindFirstChild("HumanoidRootPart") break end end if target then break end end
+            else
+                for _, v in pairs(workspace:GetDescendants()) do if v:IsA("Humanoid") and v.Health > 0 and v.Parent ~= Player.Character and not Players:GetPlayerFromCharacter(v.Parent) then target = v.Parent:FindFirstChild("HumanoidRootPart"); break end end
             end
             CurrentTarget = target
         end
     end
 end)
 
-RS.Heartbeat:Connect(function()
-    if not Config.Active or not CurrentTarget or not Player.Character then return end
-    local root = Player.Character:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-
-    for _, part in pairs(Player.Character:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end
-    root.AssemblyLinearVelocity = Vector3.new(0,0,0)
-
-    local goal = CurrentTarget.Position + (CurrentTarget.CFrame.LookVector * -Config.Dist) + Vector3.new(0, Config.Height, 0)
-    root.CFrame = root.CFrame:Lerp(CFrame.new(goal, CurrentTarget.Position), 0.3)
-    
-    if tick() - LastAtk >= Config.AttackSpeed then
-        UseSkill(Keys[SkillIndex])
-        local tool = Player.Character:FindFirstChildOfClass("Tool")
-        if tool then tool:Activate() end
-        VU:CaptureController(); VU:Button1Down(Vector2.new(0,0))
-        SkillIndex = SkillIndex % #Keys + 1
-        LastAtk = tick()
-    end
-end)
+-- RGB & Toggle
+task.spawn(function() while true do RGBStroke.Color = Color3.fromHSV(tick()%5/5, 0.7, 1); task.wait() end end)
+local function ToggleHub()
+    if MainFrame.Visible then TS:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0,0,0,0), GroupTransparency = 1}):Play(); task.delay(0.3, function() MainFrame.Visible = false end)
+    else MainFrame.Visible = true; MainFrame.Size = UDim2.new(0,0,0,0); TS:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Size = UDim2.new(0,700,0,520), GroupTransparency = 0}):Play() end
+end
+MiniBtn.MouseButton1Click:Connect(ToggleHub); UIS.InputBegan:Connect(function(i, p) if not p and i.KeyCode == Enum.KeyCode.K then ToggleHub() end end)
