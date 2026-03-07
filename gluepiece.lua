@@ -1,5 +1,5 @@
--- [[ BINHDEPTRAI.HUB - v41 FINAL STABLE ]]
-local Config = { BossMode = false, GodMode = false, Dist = 7, Height = 4, FPSBoost = false, Priority = "None" }
+-- [[ BINHDEPTRAI.HUB - v47 NO GOD MODE ]]
+local Config = { BossMode = false, Dist = 2.5, Height = 3, FPSBoost = false, Priority = "None" }
 local Player = game.Players.LocalPlayer
 local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
@@ -11,7 +11,6 @@ local Keys = {"E", "R", "T", "F"}
 local BossList = {"Kyo", "Shinoa", "Duck Boss", "Chara", "Cutie Boss", "Sword Master", "Sans", "King Noob"}
 local ValidIslands = {"Cutie Noob Island", "Duck Island", "Judgement Island", "Kyo Island", "Safe Zone Island", "Sand Island", "Sans Island", "Sky Island", "Sword Master Island", "Tiny Statue Island"}
 local CurrentTarget = nil
-local dodgeDir = 1
 
 -- [[ 1. NOTIFICATION SYSTEM ]]
 local function SendNotify(title, text, color)
@@ -40,9 +39,9 @@ local function BoostFPS(v)
     SendNotify("System", v and "FPS Boost: ON" or "FPS Boost: OFF", Color3.new(1, 1, 0))
 end
 
--- [[ 3. UI SETUP (Based on v37) ]]
+-- [[ 3. UI SETUP (Based on v41) ]]
 local ScreenGui = Instance.new("ScreenGui", Player.PlayerGui)
-ScreenGui.Name = "BinhDepTrai_V41"; ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "BinhDepTrai_V47"; ScreenGui.ResetOnSpawn = false
 
 local MainGroup = Instance.new("CanvasGroup", ScreenGui)
 MainGroup.Size = UDim2.new(0, 700, 0, 520); MainGroup.Position = UDim2.new(0.5, -350, 0.5, -260)
@@ -50,14 +49,12 @@ MainGroup.BackgroundColor3 = Color3.fromRGB(10, 10, 12); MainGroup.GroupTranspar
 Instance.new("UICorner", MainGroup).CornerRadius = UDim.new(0, 15)
 local RGBStroke = Instance.new("UIStroke", MainGroup); RGBStroke.Thickness = 3; RGBStroke.ApplyStrokeMode = "Border"
 
--- Header & Intro Text
 local Header = Instance.new("Frame", MainGroup); Header.Size = UDim2.new(1, 0, 0, 70); Header.BackgroundTransparency = 1
 local Title = Instance.new("TextLabel", Header); Title.Size = UDim2.new(0, 400, 1, 0); Title.Position = UDim2.new(0, -300, 0, 0)
 Title.Text = "BinhDepTrai.Hub"; Title.TextColor3 = Color3.new(1,1,1); Title.TextSize = 24; Title.Font = "GothamBold"; Title.BackgroundTransparency = 1; Title.TextXAlignment = "Left"; Title.TextTransparency = 1
 local RGBCircle = Instance.new("Frame", Header); RGBCircle.Size = UDim2.new(0, 35, 0, 35); RGBCircle.Position = UDim2.new(0, 25, 0.5, -17.5); RGBCircle.BackgroundColor3 = Color3.new(1,1,1); Instance.new("UICorner", RGBCircle).CornerRadius = UDim.new(1, 0); RGBCircle.BackgroundTransparency = 1
 local CircleStroke = Instance.new("UIStroke", RGBCircle); CircleStroke.Thickness = 2; CircleStroke.Transparency = 1
 
--- Sidebar
 local SideBar = Instance.new("Frame", MainGroup); SideBar.Size = UDim2.new(0, 180, 1, -90); SideBar.Position = UDim2.new(0, 20, 0, 80); SideBar.BackgroundColor3 = Color3.fromRGB(15, 15, 22); Instance.new("UICorner", SideBar)
 Instance.new("UIListLayout", SideBar).Padding = UDim.new(0, 10); Instance.new("UIPadding", SideBar).PaddingTop = UDim.new(0, 10)
 local ContentHolder = Instance.new("Frame", MainGroup); ContentHolder.Position = UDim2.new(0, 215, 0, 80); ContentHolder.Size = UDim2.new(1, -235, 1, -90); ContentHolder.BackgroundTransparency = 1; ContentHolder.ClipsDescendants = true
@@ -86,11 +83,9 @@ local function ToggleUI()
     if IsOpen then
         MainGroup.Visible = true
         TS:Create(MainGroup, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {GroupTransparency = 0, Size = UDim2.new(0, 700, 0, 520)}):Play()
-        SendNotify("Menu", "ON", Color3.new(0, 0.8, 1))
     else
         TS:Create(MainGroup, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {GroupTransparency = 1, Size = UDim2.new(0, 650, 0, 480)}):Play()
         task.delay(0.3, function() if not IsOpen then MainGroup.Visible = false end end)
-        SendNotify("Menu", "OFF", Color3.fromRGB(255, 50, 50))
     end
 end
 UIS.InputBegan:Connect(function(i, p) if not p and i.KeyCode == Enum.KeyCode.K then ToggleUI() end end)
@@ -108,7 +103,7 @@ local function AddNav(name, tab)
 end
 AddNav("FARMING", Tabs.Farm); AddNav("PRIORITY", Tabs.Priority); AddNav("WORLD", Tabs.Map); AddNav("PLAYERS", Tabs.Plyr)
 
--- [[ 5. BOSS LOGIC CORE ]]
+-- [[ 5. BOSS LOGIC CORE (NO DODGE / CLOSE RANGE) ]]
 task.spawn(function()
     while task.wait(0.3) do
         local target = nil
@@ -128,7 +123,6 @@ task.spawn(function()
             end
         end
         CurrentTarget = target
-        dodgeDir = -dodgeDir
     end
 end)
 
@@ -136,9 +130,9 @@ RS.Heartbeat:Connect(function()
     if Config.BossMode and CurrentTarget and Player.Character:FindFirstChild("HumanoidRootPart") then
         local root = Player.Character.HumanoidRootPart; root.AssemblyLinearVelocity = Vector3.zero
         for _, p in pairs(Player.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
-        local h, d = (Config.GodMode and 20 or Config.Height), (Config.GodMode and 10 or Config.Dist)
-        local dodgePos = (CurrentTarget.CFrame * CFrame.new(dodgeDir * 3, h, d)).Position
-        root.CFrame = root.CFrame:Lerp(CFrame.lookAt(dodgePos, CurrentTarget.Position), 0.25)
+        -- KHOẢNG CÁCH SÁT BOSS ĐỂ CHÉM TRÚNG
+        local targetPos = (CurrentTarget.CFrame * CFrame.new(0, Config.Height, Config.Dist)).Position
+        root.CFrame = root.CFrame:Lerp(CFrame.lookAt(targetPos, CurrentTarget.Position), 0.25)
     end
 end)
 
@@ -157,7 +151,6 @@ end
 
 -- Toggles & Tabs
 CreateToggle(Tabs.Farm, "Auto Farm Boss", Config.BossMode, function(v) Config.BossMode = v end)
-CreateToggle(Tabs.Farm, "God Mode + Dodge", Config.GodMode, function(v) Config.GodMode = v end)
 CreateToggle(Tabs.Farm, "FPS Booster", Config.FPSBoost, function(v) BoostFPS(v) end)
 
 for _, boss in pairs(BossList) do
@@ -173,13 +166,25 @@ local function RefreshPlayers()
 end
 AddBtn("REFRESH LIST", Tabs.Plyr, RefreshPlayers); RefreshPlayers()
 
--- Auto Attack Loop
+-- Auto Attack Loop (COMBO 2-2-1)
 task.spawn(function()
     while true do
         if Config.BossMode and CurrentTarget then
-            for _, t in pairs(Player.Backpack:GetChildren()) do if t:IsA("Tool") then t.Parent = Player.Character end end
-            for _, k in pairs(Keys) do VIM:SendKeyEvent(true, k, false, game); task.wait(0.02); VIM:SendKeyEvent(false, k, false, game) end
-            VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1); task.wait(0.05); VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            -- Fruit Skills x2
+            for i = 1, 2 do
+                for _, t in pairs(Player.Character:GetChildren()) do if t:IsA("Tool") then t.Parent = Player.Backpack end end
+                task.wait(0.1)
+                for _, k in pairs(Keys) do VIM:SendKeyEvent(true, k, false, game); task.wait(0.05); VIM:SendKeyEvent(false, k, false, game); task.wait(0.05) end
+            end
+            -- Sword/Equip x2
+            for i = 1, 2 do
+                for _, t in pairs(Player.Backpack:GetChildren()) do if t:IsA("Tool") then t.Parent = Player.Character end end
+                task.wait(0.1)
+                for _, k in pairs(Keys) do VIM:SendKeyEvent(true, k, false, game); task.wait(0.05); VIM:SendKeyEvent(false, k, false, game); task.wait(0.05) end
+                VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1); task.wait(0.1); VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            end
+            -- Unequip All
+            for _, t in pairs(Player.Character:GetChildren()) do if t:IsA("Tool") then t.Parent = Player.Backpack end end
         end
         task.wait(0.1)
     end
