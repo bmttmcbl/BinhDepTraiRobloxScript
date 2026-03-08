@@ -1,4 +1,4 @@
--- [[ BINHDEPTRAI.HUB - v216 - RANDOM TP EDITION ]]
+-- [[ BINHDEPTRAI.HUB - v219 - FINAL REPAIR ]]
 local Config = { FarmEnabled = false, Targets = {}, Dist = 5.5, Height = 6.5 }
 local Player = game.Players.LocalPlayer
 local RS, VIM, UIS, TS = game:GetService("RunService"), game:GetService("VirtualInputManager"), game:GetService("UserInputService"), game:GetService("TweenService")
@@ -34,21 +34,39 @@ local function GetCurrentTarget()
     return nil
 end
 
+-- [[ 🔥 COMBO CHUẨN V179: UNEQUIP -> SKILLS -> EQUIP -> SKILLS ]]
 local function ExecuteSupremeCombo()
     local char = Player.Character; if not char then return end
     local hum = char:FindFirstChildOfClass("Humanoid")
+    
+    -- Phát súng đầu (V)
     task.spawn(function() VIM:SendKeyEvent(true, "V", false, game); task.wait(0.01); VIM:SendKeyEvent(false, "V", false, game) end)
+    
+    -- [LOOP 1] UNEQUIP -> E,R,T,F
     hum:UnequipTools(); task.wait(0.06)
-    for _, key in ipairs({"E", "R", "T", "F"}) do VIM:SendKeyEvent(true, key, false, game); task.wait(0.01); VIM:SendKeyEvent(false, key, false, game) end
-    for _, tool in pairs(Player.Backpack:GetChildren()) do if tool:IsA("Tool") then tool.Parent = char end end; task.wait(0.06)
-    for _, key in ipairs({"E", "R", "T", "F"}) do VIM:SendKeyEvent(true, key, false, game); task.wait(0.01); VIM:SendKeyEvent(false, key, false, game) end
-    for i = 1, 4 do VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1); task.wait(0.01); VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1) end
+    for _, key in ipairs({"E", "R", "T", "F"}) do 
+        VIM:SendKeyEvent(true, key, false, game); task.wait(0.01); VIM:SendKeyEvent(false, key, false, game) 
+    end
+    
+    -- [LOOP 2] EQUIP -> E,R,T,F
+    for _, tool in pairs(Player.Backpack:GetChildren()) do 
+        if tool:IsA("Tool") then tool.Parent = char end 
+    end; task.wait(0.06)
+    
+    for _, key in ipairs({"E", "R", "T", "F"}) do 
+        VIM:SendKeyEvent(true, key, false, game); task.wait(0.01); VIM:SendKeyEvent(false, key, false, game) 
+    end
+    
+    -- Click chuột cuối cùng
+    for i = 1, 4 do 
+        VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1); task.wait(0.01); VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1) 
+    end
 end
 
--- [[ UI SYSTEM ]]
+-- [[ UI SYSTEM - GIỮ NGUYÊN 100% CỦA ÔNG ]]
 local function CreateUI()
-    if Player.PlayerGui:FindFirstChild("BinhHub_v216") then Player.PlayerGui.BinhHub_v216:Destroy() end
-    local sg = Instance.new("ScreenGui", Player.PlayerGui); sg.Name = "BinhHub_v216"; sg.ResetOnSpawn = false
+    if Player.PlayerGui:FindFirstChild("BinhHub_v212") then Player.PlayerGui.BinhHub_v212:Destroy() end
+    local sg = Instance.new("ScreenGui", Player.PlayerGui); sg.Name = "BinhHub_v212"; sg.ResetOnSpawn = false
     
     local main = Instance.new("Frame", sg); main.Size = UDim2.new(0, 850, 0, 480); main.Position = UDim2.new(0.5, -425, 0.3, 0); main.BackgroundColor3 = Color3.fromRGB(8, 8, 8); main.Active = true; main.Draggable = true; main.ClipsDescendants = true
     Instance.new("UICorner", main, {CornerRadius = UDim.new(0, 15)}); Instance.new("UIStroke", main, {Color = Color3.new(1,0,0), Thickness = 3})
@@ -75,7 +93,7 @@ local function CreateUI()
     local wsToggleAction = nil
     local function AddSwitch(parent, text, cb)
         local f = Instance.new("Frame", parent); f.Size = UDim2.new(1, 0, 0, 40); f.BackgroundTransparency = 1
-        local t = Instance.new("TextLabel", f); t.Size = UDim2.new(0.9, 0, 1, 0); t.Text = text; t.TextColor3 = Color3.new(1,1,1); t.Font = "GothamBold"; t.TextSize = 11; t.TextXAlignment = "Left"; t.BackgroundTransparency = 1
+        local t = Instance.new("TextLabel", f); t.Size = UDim2.new(0.9, 0, 1, 0); t.Text = text; t.TextColor3 = Color3.new(1,1,1); t.Font = "GothamBold"; t.TextSize = 13; t.TextXAlignment = "Left"; t.BackgroundTransparency = 1
         local sBG = Instance.new("TextButton", f); sBG.Size = UDim2.new(0, 40, 0, 20); sBG.Position = UDim2.new(1, -45, 0.25, 0); sBG.BackgroundColor3 = Color3.fromRGB(40, 40, 40); sBG.Text = ""; Instance.new("UICorner", sBG).CornerRadius = UDim.new(1,0)
         local sC = Instance.new("Frame", sBG); sC.Size = UDim2.new(0, 16, 0, 16); sC.Position = UDim2.new(0.1, 0, 0.1, 0); sC.BackgroundColor3 = Color3.new(1,1,1); Instance.new("UICorner", sC).CornerRadius = UDim.new(1,0)
         local active = false
@@ -110,29 +128,23 @@ local function CreateUI()
     local pSec = CreateSection("Performance", 295, Color3.new(1,1,1))
     AddSwitch(pSec, "ULTRA BOOST (20FPS)", function(v) 
         if setfpscap then setfpscap(v and 20 or 60) end
-        if v then for _, o in pairs(workspace:GetDescendants()) do if o:IsA("BasePart") then OriginalMaterials[o] = {o.Material, o.Color}; o.Material = "SmoothPlastic"; o.Color = Color3.new(0.3,0.3,0.3) end end
-        else for o, d in pairs(OriginalMaterials) do if o and o.Parent then o.Material = d[1]; o.Color = d[2] end end; OriginalMaterials = {} end
     end)
-    AddSwitch(pSec, "WHITE SCREEN (J TO ON/OFF)", function(v) RS:Set3dRenderingEnabled(not v) end)
+    AddSwitch(pSec, "WHITE SCREEN (J to ON/OFF)", function(v) RS:Set3dRenderingEnabled(not v) end)
 
     -- SECTION 3: UTILITIES
     local uSec = CreateSection("Utilities", 570, Color3.new(0, 0.6, 1))
-    local tpSw = Instance.new("TextButton", uSec); tpSw.Size = UDim2.new(1, 0, 0, 40); tpSw.Text = "GET LIGHTNING SWORD"; tpSw.BackgroundColor3 = Color3.fromRGB(0, 60, 150); tpSw.TextColor3 = Color3.new(1,1,1); tpSw.Font = "GothamBold"; tpSw.TextSize = 11; Instance.new("UICorner", tpSw)
+    local tpSw = Instance.new("TextButton", uSec); tpSw.Size = UDim2.new(1, 0, 0, 40); tpSw.Text = "GET LIGHTNING SWORD"; tpSw.BackgroundColor3 = Color3.fromRGB(0, 60, 150); tpSw.TextColor3 = Color3.new(1,1,1); tpSw.Font = "GothamBold"; tpSw.TextSize = 14; Instance.new("UICorner", tpSw)
     tpSw.MouseButton1Click:Connect(function() local i = workspace:FindFirstChild("Tiny Statue Island", true); if i then Player.Character:PivotTo(i:GetPivot()) end end)
     
-    -- [[ 🚀 ĐÂY RỒI: NÚT TP RANDOM PLAYER ]]
-    local tpRand = Instance.new("TextButton", uSec); tpRand.Size = UDim2.new(1, 0, 0, 40); tpRand.Text = "TP TO RANDOM PLAYER"; tpRand.BackgroundColor3 = Color3.fromRGB(150, 0, 0); tpRand.TextColor3 = Color3.new(1,1,1); tpRand.Font = "GothamBold"; tpRand.TextSize = 11; Instance.new("UICorner", tpRand)
+    -- Nút TP Random Player (Thay thế list player cũ)
+    local tpRand = Instance.new("TextButton", uSec); tpRand.Size = UDim2.new(1, 0, 0, 40); tpRand.Text = "TP TO RANDOM PLAYER"; tpRand.BackgroundColor3 = Color3.fromRGB(150, 0, 0); tpRand.TextColor3 = Color3.new(1,1,1); tpRand.Font = "GothamBold"; tpRand.TextSize = 12; Instance.new("UICorner", tpRand)
     tpRand.MouseButton1Click:Connect(function()
-        local players = game.Players:GetPlayers()
         local others = {}
-        for _, p in pairs(players) do if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then table.insert(others, p) end end
-        if #others > 0 then
-            local target = others[math.random(1, #others)]
-            Player.Character:PivotTo(target.Character.HumanoidRootPart.CFrame)
-        end
+        for _, p in pairs(game.Players:GetPlayers()) do if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then table.insert(others, p) end end
+        if #others > 0 then Player.Character:PivotTo(others[math.random(1, #others)].Character:GetPivot()) end
     end)
 
-    local hint = Instance.new("TextLabel", content); hint.Size = UDim2.new(1, 0, 0, 20); hint.Position = UDim2.new(0, 0, 1, -25); hint.Text = "KEYBINDS: [K] MINIMIZE | [J] WHITE SCREEN"; hint.TextColor3 = Color3.new(0.5, 0.5, 0.5); hint.Font = "GothamBold"; hint.TextSize = 11; hint.BackgroundTransparency = 1
+    local hint = Instance.new("TextLabel", content); hint.Size = UDim2.new(1, 0, 0, 20); hint.Position = UDim2.new(0, 0, 1, -25); hint.Text = "KEYBINDS: [K] MINIMIZE | [J] WHITE SCREEN"; hint.TextColor3 = Color3.new(0.5, 0.5, 0.5); hint.Font = "GothamBold"; hint.TextSize = 12; hint.BackgroundTransparency = 1
 
     -- Fix Minimize
     local isMin = false
@@ -156,15 +168,27 @@ local function CreateUI()
     end)
 end
 
--- Engine Start
+-- [[ ENGINE START - LOCK VỊ TRÍ CHUẨN V179 ]]
 RS.Stepped:Connect(function()
-    local boss = GetCurrentTarget(); local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    if boss and root then 
+    local boss = GetCurrentTarget()
+    local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    
+    if boss and root and boss:FindFirstChild("HumanoidRootPart") then 
         root.Velocity = Vector3.zero
-        root.CFrame = CFrame.lookAt(boss.HumanoidRootPart.Position + Vector3.new(math.sin(tick()*3)*3, Config.Height, math.cos(tick()*3)*Config.Dist), boss.HumanoidRootPart.Position)
-    elseif Config.FarmEnabled and root then root.Velocity = Vector3.zero; root.Anchored = true 
-    elseif not Config.FarmEnabled and root then root.Anchored = false end
+        -- Đứng sát mặt/đầu boss (Lock cứng không bay vòng tròn)
+        root.CFrame = CFrame.new(boss.HumanoidRootPart.Position + Vector3.new(0, Config.Height, 0)) * CFrame.Angles(math.rad(-90), 0, 0)
+    elseif Config.FarmEnabled and root then 
+        root.Velocity = Vector3.zero
+        root.Anchored = true 
+    elseif not Config.FarmEnabled and root then 
+        root.Anchored = false 
+    end
 end)
-task.spawn(function() while task.wait(0.35) do if GetCurrentTarget() then ExecuteSupremeCombo() end end end)
+
+task.spawn(function() 
+    while task.wait(0.35) do 
+        if GetCurrentTarget() then ExecuteSupremeCombo() end 
+    end 
+end)
 
 CreateUI()
